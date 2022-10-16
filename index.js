@@ -16,9 +16,7 @@ dbConnect();
 
 // ejs
 app.get("/", (req, res) => {
-  res.render("home.ejs", {
-  
-  });
+  res.send("server is running")
 });
 
 app.all("*", (req, res) => {
