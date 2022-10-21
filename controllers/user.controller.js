@@ -1,81 +1,88 @@
-const { createUserService, loginUserService, getUserServiceByEmail } = require("../services/user.service");
-const bcrypt = require('bcryptjs');
-const { generateToken } = require("../utils/jwtToken");
-exports.signup = async (req, res) => {
+const { createUserService, getUserByEmail } = require("../services/user.service")
+const { generateToken } = require("../utils/token")
+
+exports.signUp = async (req, res, next) => {
     try {
-        const user = await createUserService(req.body)
+        const sign = await createUserService(req.body)
+        
         res.status(200).json({
             status: "success",
-            message: " successfully sign up"
-        })
+            massage: "successfully create a new user",
+            data: sign
+          })
     } catch (error) {
         res.status(400).json({
-            success: false,
-            message: error.message
-        })
+            status: "fail",
+            message: "Data is not inserted",
+            error: error.message
+          })
     }
-};
+}
 
-exports.login = async (req, res) => {
+exports.login = async (req, res, next) => {
     try {
-        const { email, password } = req.body;
-        if (!email || !password) {
+        const {email, password} = req.body;
+        if(!email || !password) {
             return res.status(401).json({
-                status: "fail",
-                error: "please prove email and password"
-            });
+                stauts: "fail",
+                error: "please provide your credaentials",
+              })
         }
-        const [user] = await getUserServiceByEmail(email);
-        console.log(user)
+
+        const user = await getUserByEmail(email);
         if (!user) {
             return res.status(401).json({
-                status: "fail",
-                error: "no user found! please create a account"
-            });
-        }
-        const isValidPassword = bcrypt.compareSync(password, user.password)
-        if (!isValidPassword) {
+              stauts: "fail",
+              error: "user not found.Please create account",
+            })
+          }
+
+          const isPasswordValid = user.comparePassword(password, user.password);
+          if(!isPasswordValid) {
             return res.status(403).json({
-                status: "fail",
-                error: "password is not valid"
-            });
-        }
-        if (user.status != 'active') {
+                stauts: "fail",
+                error: "password is not correct",
+              })
+          }
+          if(user.status != 'active') {
             return res.status(401).json({
-                status: "fail",
-                error: "your account not active yet please contact us"
-            });
-        }
-        const token = generateToken(user)
-        const { password: pwd, ...others } = user.toObject()
+                stauts: "fail",
+                error: "Your Account is not active",
+              })
+          }
 
-        res.status(200).json({
-            success: true,
-            message: "successfully log in",
+          const token = generateToken(user);
+
+          const {password: pws, ...others} = user.toObject();
+          res.status(200).json({
+            stauts: "success",
+            massage: "successfully login in",
             data: {
-                user: others,
-                token
+              user: others,
+              token
             }
-        })
-
+          })
     } catch (error) {
         res.status(400).json({
-            success: false,
-            message: error.message
-        })
+            stauts: "fail",
+            message: "Data is not inserted",
+            error: error.message
+          })
     }
-};
+}
+
 exports.getMe = async (req, res) => {
     try {
-        const user = await getUserServiceByEmail(req.user?.email)
-        res.status(200).json({
-            success:true,
-            user,
-        })
+      const user= await getUserByEmail(req.user?.email)
+      res.status(200).json({
+        status:"Success",
+        data:user
+      })
+  
     } catch (error) {
-        res.status(400).json({
-            success: false,
-            message: error.message
-        })
+      res.status(400).json({
+        stauts: "fail",
+        error,
+      })
     }
-};
+  }
